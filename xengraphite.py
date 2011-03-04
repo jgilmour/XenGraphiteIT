@@ -1,12 +1,7 @@
 #!/usr/bin/python
 
 import XenAPI
-import string
-import time
-import os
-import ConfigParser
-import sys
-import re
+import string, time, os, ConfigParser, sys, re
 from socket import socket
 
 def bytesToGB(num):
@@ -19,7 +14,7 @@ def bytesToGB(num):
   outputGB = float (num / 1073741824)
   return outputGB
 
-def sendDataToCarbon(name, data):
+def sendDataToCarbon(config, name, data):
   """
   sendDataToCarbon(name, data)
   takes in data passed as a name, and associated data
@@ -27,9 +22,20 @@ def sendDataToCarbon(name, data):
   appends all data to a list and then sends to carbon/graphite
   """
   timeNow = getTime()
+  
+  cs = str(config.get('GRAPHITE','CARBON_HOST'))
+  cp = int(config.get('GRAPHITE','CARBON_PORT'))
+  sock = socket() 
+  try:
+    sock.connect((cs, cp))
+  except:
+    errorAndExit("Can't connect to CARBON")
+    sys.exit(1)
 
+  message = "%s %d %d\n" % (name, data, timeNow)
+  sock.sendall(message)
   print "%s %d %d" % (name, data, timeNow)
-
+  
 def getTime():
   """
   Just getting the time and returning it as 'timeNow'
@@ -81,13 +87,10 @@ def grabXenData(session, config):
 
   gp = config.get('GRAPHITE', 'CARBON_NAME')
 
-  sendDataToCarbon((gp + hostname + '.sr.' + sr_name_label + '.space.used'), bytesToGB(sr_phys_size))
-  sendDataToCarbon((gp + hostname + '.sr.' + sr_name_label + '.space.total'), bytesToGB(sr_phys_util))  
-  sendDataToCarbon((gp + hostname + '.vm.total'), running_vm_total)
+  sendDataToCarbon(config, (gp + hostname + '.sr.' + sr_name_label + '.space.used'), bytesToGB(sr_phys_util))
+  sendDataToCarbon(config, (gp + hostname + '.sr.' + sr_name_label + '.space.total'), bytesToGB(sr_phys_size))  
+  sendDataToCarbon(config, (gp + hostname + '.vm.total'), running_vm_total)
   
- # print 'total vms: %s \nname: %s \nphysical util: %dGB \nphys size: %dGB' % \
- #    (running_vm_total, sr_name_label, bytesToGB(sr_phys_util), bytesToGB(sr_phys_size))
-
 def parseHostname(hostname):
   """
   strip out the http:// https:// and trailing /
@@ -105,15 +108,19 @@ if __name__ == '__main__':
   CONFIG_FILE = (os.getcwd() + "/.config")
   config = ConfigParser.ConfigParser()
   config.read([CONFIG_FILE])
+  
+  delay = 60
 
   url = config.get('XENAPI', 'URL')
   username =  config.get('XENAPI', 'USERNAME')
   password =  config.get('XENAPI', 'PASSWORD')
-  session = XenAPI.Session(url)
+  while True:
+    session = XenAPI.Session(url)
 
-  try:
-    session.xenapi.login_with_password(username, password)
-  except:
-    errorAndExit("Couldn't connect to host, are username/password/url correct?")
+    try:
+      session.xenapi.login_with_password(username, password)
+    except:
+      errorAndExit("Couldn't connect to host, are username/password/url correct?")
 
-  grabXenData(session, config)
+    grabXenData(session, config)
+    time.sleep(delay)
