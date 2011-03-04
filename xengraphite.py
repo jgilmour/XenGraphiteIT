@@ -77,11 +77,8 @@ def grabXenData(session, config):
   sr_phys_util = float(session.xenapi.SR.get_physical_utilisation(sr))
   sr_phys_size = float(session.xenapi.SR.get_physical_size(sr))
 
-  # strip out the http:// https:// and trailing /
-  # TODO: also change .'s to - for subdomains
-  hostname = config.get('XENAPI', 'URL')
-  hostname = re.sub('http:\/\/|https://\/\/|\/', '', hostname)
-  
+  hostname = parseHostname((config.get('XENAPI', 'URL')))
+
   gp = config.get('GRAPHITE', 'CARBON_NAME')
 
   sendDataToCarbon((gp + hostname + '.sr.' + sr_name_label + '.space.used'), bytesToGB(sr_phys_size))
@@ -90,6 +87,15 @@ def grabXenData(session, config):
   
  # print 'total vms: %s \nname: %s \nphysical util: %dGB \nphys size: %dGB' % \
  #    (running_vm_total, sr_name_label, bytesToGB(sr_phys_util), bytesToGB(sr_phys_size))
+
+def parseHostname(hostname):
+  """
+  strip out the http:// https:// and trailing /
+  split hostname into .'s and get the first entry which is the hostname
+  """
+  hostname = re.sub('http:\/\/|https://\/\/|\/', '', hostname)
+  hostname = hostname.split(".")
+  return str(hostname[0])
 
 if __name__ == '__main__':
 
