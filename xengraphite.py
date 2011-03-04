@@ -59,12 +59,12 @@ def grabXenData(session, config):
     vms = session.xenapi.VM.get_all()
   except:
     errorAndExit("Couldn't retrieve all VM's")
-#  for vm in vms:
-#    record = session.xenapi.VM.get_record(vm)
-#    if (record["power_state"] == "Running") and not (record["is_control_domain"]):
-#      count += 1
-#  running_vm_total = count
-  running_vm_total = 86
+  for vm in vms:
+    record = session.xenapi.VM.get_record(vm)
+    if (record["power_state"] == "Running") and not (record["is_control_domain"]):
+      count += 1
+  running_vm_total = count
+
   # get storage repository information
   # retrieve name, utilisation, and physical size
 
