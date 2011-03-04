@@ -7,5 +7,4 @@ SR-UUID = 3eef3ca-ee7d-14ee-89ee-c42aeeecf001
 [GRAPHITE]
 CARBON_HOST = 10.20.0.1
 CARBON_PORT = 6000
-UN = 
-PW = 
+CARBON_NAME = com.IT.servers.xen.

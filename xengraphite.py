@@ -6,6 +6,7 @@ import time
 import os
 import ConfigParser
 import sys
+import re
 from socket import socket
 
 def bytesToGB(num):
@@ -26,7 +27,8 @@ def sendDataToCarbon(name, data):
   appends all data to a list and then sends to carbon/graphite
   """
   timeNow = getTime()
-  print "The time is: %d" % timeNow
+
+  print "%s %d %d" % (name, data, timeNow)
 
 def getTime():
   """
@@ -57,12 +59,12 @@ def grabXenData(session, config):
     vms = session.xenapi.VM.get_all()
   except:
     errorAndExit("Couldn't retrieve all VM's")
-  for vm in vms:
-    record = session.xenapi.VM.get_record(vm)
-    if (record["power_state"] == "Running") and not (record["is_control_domain"]):
-      count += 1
-  running_vm_total = count
-
+#  for vm in vms:
+#    record = session.xenapi.VM.get_record(vm)
+#    if (record["power_state"] == "Running") and not (record["is_control_domain"]):
+#      count += 1
+#  running_vm_total = count
+  running_vm_total = 86
   # get storage repository information
   # retrieve name, utilisation, and physical size
 
@@ -75,10 +77,19 @@ def grabXenData(session, config):
   sr_phys_util = float(session.xenapi.SR.get_physical_utilisation(sr))
   sr_phys_size = float(session.xenapi.SR.get_physical_size(sr))
 
-  sendDataToCarbon(sr_name_label,bytesToGB(sr_phys_util))
+  # strip out the http:// https:// and trailing /
+  # TODO: also change .'s to - for subdomains
+  hostname = config.get('XENAPI', 'URL')
+  hostname = re.sub('http:\/\/|https://\/\/|\/', '', hostname)
+  
+  gp = config.get('GRAPHITE', 'CARBON_NAME')
 
-  print 'total vms: %s \nname: %s \nphysical util: %dGB \nphys size: %dGB' % \
-      (running_vm_total, sr_name_label, bytesToGB(sr_phys_util), bytesToGB(sr_phys_size))
+  sendDataToCarbon((gp + hostname + '.sr.' + sr_name_label + '.space.used'), bytesToGB(sr_phys_size))
+  sendDataToCarbon((gp + hostname + '.sr.' + sr_name_label + '.space.total'), bytesToGB(sr_phys_util))  
+  sendDataToCarbon((gp + hostname + '.vm.total'), running_vm_total)
+  
+ # print 'total vms: %s \nname: %s \nphysical util: %dGB \nphys size: %dGB' % \
+ #    (running_vm_total, sr_name_label, bytesToGB(sr_phys_util), bytesToGB(sr_phys_size))
 
 if __name__ == '__main__':
 
