@@ -1,0 +1,23 @@
+XenGraphiteIT
+
+The purpose of this python code is connect to a Cirix Xen Server and/or Pool 
+and pull statistics. These statistics will be gathered and sent to a listening
+server with Carbon and Graphite installed on it to create pretty graphs.
+
+Statistics to be pulled:
+
+- Storage Repository(s):
+-- Total Size
+-- Utilized Space
+
+- Xen VMs:
+-- Total count (running) on server/pool
+
+- XenServer (Hosts):
+-- CPU Used
+-- Memory Total
+-- Memory Utilization
+
+
+... More information to come soon.
+
