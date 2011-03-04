@@ -1,0 +1,7 @@
+[XENAPI]
+URL = http://xenserver.domain.local
+USERNAME = root
+PASSWORD = awesomepassword
+SR-UUID = 3eef3ca-ee7d-14ee-89ee-c42aeeecf001
+
+
